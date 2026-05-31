@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AV2 Prática — Avaliação da Campanha · UNI7 2026.1</title>
+<style>
+  :root {
+    --red: #8B0000; --red-h: #a00000; --dark: #1a1a2e;
+    --amber: #92600a; --amber-bg: #fffbeb; --amber-bd: #f59e0b;
+    --insuf-bg: #fef2f2; --insuf-bd: #fca5a5; --insuf-t: #991b1b;
+    --parc-bg: #fffbeb;  --parc-bd: #fcd34d;  --parc-t: #92400e;
+    --pleno-bg: #f0fdf4; --pleno-bd: #86efac; --pleno-t: #166534;
+    --border: #e5e7eb; --lgray: #f9fafb; --text: #111827; --muted: #6b7280;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f3f4f6; color: var(--text); }
+  .page { max-width: 780px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+
+  header { background: var(--dark); border-radius: 12px; padding: 1.5rem 1.75rem; margin-bottom: 1.5rem; border-top: 5px solid var(--red); }
+  header h1 { font-size: 1.1rem; font-weight: 600; color: #fff; margin-bottom: 4px; }
+  header p { font-size: 0.78rem; color: rgba(255,255,255,0.55); }
+
+  .prog-wrap { height: 4px; background: #e5e7eb; border-radius: 2px; margin-bottom: 1.5rem; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--red); border-radius: 2px; transition: width 0.3s; width: 0%; }
+
+  .card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 0.875rem; }
+  .sec-head { background: var(--red); color: #fff; border-radius: 8px; padding: 0.55rem 1rem; font-size: 0.75rem; font-weight: 600; letter-spacing: .05em; margin: 1.5rem 0 0.625rem; display: flex; justify-content: space-between; align-items: center; }
+
+  .q-title { font-size: 0.875rem; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+  .q-hint { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.75rem; line-height: 1.5; }
+  .anchor { font-size: 0.7rem; color: var(--amber); background: var(--amber-bg); border-left: 3px solid var(--amber-bd); padding: 5px 8px; margin-bottom: 0.75rem; border-radius: 0 4px 4px 0; display: block; }
+  .field-lbl { display: block; font-size: 0.78rem; color: var(--muted); margin-bottom: 4px; }
+
+  input[type=text], select, textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 7px; font-size: 0.875rem; font-family: inherit; background: #fff; color: var(--text); outline: none; transition: border-color .15s; }
+  input[type=text]:focus, select:focus, textarea:focus { border-color: var(--red); }
+  textarea { min-height: 64px; resize: vertical; }
+
+  /* Seletor de alunos */
+  .aluno-picker { display: flex; gap: 8px; margin-bottom: 10px; }
+  .aluno-picker select { flex: 1; }
+  .btn-add { padding: 8px 14px; background: var(--red); color: #fff; border: none; border-radius: 7px; font-size: 0.82rem; font-weight: 600; cursor: pointer; white-space: nowrap; font-family: inherit; }
+  .btn-add:hover { background: var(--red-h); }
+  .btn-add:disabled { opacity: .4; cursor: not-allowed; }
+
+  .integrantes-list { display: flex; flex-direction: column; gap: 6px; min-height: 0; }
+  .integrante-row { display: flex; align-items: center; gap: 8px; background: var(--lgray); border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; flex-wrap: wrap; }
+  .integrante-row.ausente-row { background: #fef2f2; border-color: var(--insuf-bd); }
+  .integrante-num { font-size: 0.7rem; font-weight: 700; color: #fff; background: var(--dark); border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .integrante-nome { flex: 1; font-size: 0.82rem; color: var(--text); min-width: 120px; }
+  .integrante-adj { display: flex; gap: 3px; flex-shrink: 0; }
+  .ia-btn { padding: 3px 7px; border-radius: 5px; border: 1px solid var(--border); background: #fff; font-size: 0.72rem; cursor: pointer; font-family: inherit; color: var(--text); transition: all .12s; }
+  .ia-btn:hover { background: var(--lgray); }
+  .ia-btn.an { background: var(--insuf-bg); border-color: var(--insuf-bd); color: var(--insuf-t); font-weight: 600; }
+  .ia-btn.ap { background: var(--pleno-bg); border-color: var(--pleno-bd); color: var(--pleno-t); font-weight: 600; }
+  .ia-btn.az { background: #f3f4f6; border-color: #9ca3af; font-weight: 600; }
+  .ia-btn:disabled { opacity: .35; cursor: not-allowed; }
+  .integrante-nota { font-size: 0.8rem; font-weight: 700; min-width: 54px; text-align: right; color: var(--red); flex-shrink: 0; }
+  .integrante-nota.ausente-tag { color: var(--insuf-t); }
+
+  /* Checkbox ausente */
+  .ausente-wrap { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+  .ausente-wrap label { font-size: 0.7rem; color: var(--insuf-t); cursor: pointer; white-space: nowrap; }
+  .ausente-wrap input[type=checkbox] { accent-color: var(--insuf-t); cursor: pointer; width: 13px; height: 13px; }
+
+  .btn-rm { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1rem; padding: 0 2px; line-height: 1; flex-shrink: 0; }
+  .btn-rm:hover { color: var(--insuf-t); }
+  .empty-hint { font-size: 0.78rem; color: var(--muted); text-align: center; padding: 12px 0; }
+
+  /* Badge de grupo — sempre visível */
+  .group-status { font-size: 0.78rem; font-weight: 600; margin-top: 8px; padding: 5px 10px; border-radius: 6px; display: none; }
+  .group-status.gs-ok   { background: var(--pleno-bg); color: var(--pleno-t); border: 1px solid var(--pleno-bd); }
+  .group-status.gs-warn { background: var(--parc-bg);  color: var(--parc-t);  border: 1px solid var(--parc-bd); }
+
+  /* Teto 2,5 */
+  .teto-wrap { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 8px; background: var(--amber-bg); border: 1px solid var(--amber-bd); margin-bottom: 6px; }
+  .teto-wrap input[type=checkbox] { accent-color: var(--amber); cursor: pointer; width: 15px; height: 15px; flex-shrink: 0; }
+  .teto-wrap label { font-size: 0.78rem; color: var(--amber); cursor: pointer; line-height: 1.4; }
+
+  /* Critérios */
+  .radio-group { display: flex; flex-direction: column; gap: 6px; }
+  .radio-opt { display: flex; align-items: flex-start; gap: 10px; padding: 9px 11px; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; transition: all .12s; }
+  .radio-opt:hover { background: var(--lgray); }
+  .radio-opt input[type=radio] { margin-top: 2px; flex-shrink: 0; accent-color: var(--red); width: 15px; height: 15px; }
+  .opt-txt { font-size: 0.8rem; line-height: 1.45; flex: 1; }
+  .opt-pts { font-size: 0.75rem; font-weight: 600; min-width: 38px; text-align: right; flex-shrink: 0; color: var(--muted); }
+  .sel-0 { background: var(--insuf-bg) !important; border-color: var(--insuf-bd) !important; }
+  .sel-h { background: var(--parc-bg)  !important; border-color: var(--parc-bd)  !important; }
+  .sel-f { background: var(--pleno-bg) !important; border-color: var(--pleno-bd) !important; }
+  .t-i { color: var(--insuf-t); } .t-p { color: var(--parc-t); } .t-f { color: var(--pleno-t); }
+
+  /* Placar */
+  .score-bar { background: var(--lgray); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.5rem; display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; margin: 1.5rem 0 0.875rem; }
+  .score-lbl { flex: 1; font-size: 0.875rem; color: var(--muted); }
+  .score-val { font-size: 2.25rem; font-weight: 700; color: var(--text); min-width: 60px; text-align: center; }
+  .score-max { font-size: 0.7rem; color: var(--muted); text-align: center; }
+  .badge { padding: 4px 12px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; border: 1px solid; display: none; }
+  .b-low  { background: var(--insuf-bg); color: var(--insuf-t); border-color: var(--insuf-bd); }
+  .b-mid  { background: var(--parc-bg);  color: var(--parc-t);  border-color: var(--parc-bd); }
+  .b-high { background: var(--pleno-bg); color: var(--pleno-t); border-color: var(--pleno-bd); }
+
+  .alert { display: flex; gap: 8px; padding: 9px 12px; border-radius: 8px; font-size: 0.75rem; margin-bottom: 6px; line-height: 1.5; border-left: 3px solid; }
+  .a-red   { background: var(--insuf-bg); border-color: #ef4444; color: var(--insuf-t); }
+  .a-amber { background: var(--amber-bg); border-color: var(--amber-bd); color: var(--amber); }
+
+  .btn-gerar { width: 100%; padding: 0.875rem; background: var(--red); color: #fff; border: none; border-radius: 9px; font-size: 0.95rem; font-weight: 600; cursor: pointer; font-family: inherit; margin-top: 1rem; transition: background .15s; }
+  .btn-gerar:hover { background: var(--red-h); }
+  .btn-gerar:disabled { opacity: .4; cursor: not-allowed; }
+
+  .result-box { display: none; background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; margin-top: 1rem; font-size: 0.72rem; line-height: 1.9; color: var(--text); white-space: pre-wrap; font-family: 'Courier New', monospace; }
+  .btn-copy { margin-top: 8px; font-size: 0.775rem; padding: 5px 12px; border-radius: 7px; border: 1px solid var(--border); background: #fff; cursor: pointer; font-family: inherit; color: var(--text); }
+  .btn-copy:hover { background: var(--lgray); }
+  .btn-novo { margin-top: 6px; margin-left: 6px; font-size: 0.775rem; padding: 5px 12px; border-radius: 7px; border: 1px solid var(--red); background: #fff; cursor: pointer; font-family: inherit; color: var(--red); }
+  .btn-novo:hover { background: var(--insuf-bg); }
+  .btn-limpar { margin-top: 6px; margin-left: 6px; font-size: 0.72rem; padding: 4px 10px; border-radius: 7px; border: 1px solid var(--border); background: #fff; cursor: pointer; font-family: inherit; color: var(--muted); }
+  .btn-limpar:hover { background: var(--lgray); }
+
+  /* Notificação de restore */
+  .restore-bar { background: #eff6ff; border: 1px solid #93c5fd; border-radius: 10px; padding: 0.875rem 1.25rem; margin-bottom: 1rem; display: none; }
+  .restore-bar p { font-size: 0.82rem; color: #1e40af; margin-bottom: 8px; }
+  .restore-bar button { padding: 5px 12px; border-radius: 7px; font-size: 0.78rem; cursor: pointer; font-family: inherit; }
+  .btn-restore-yes { background: #1e40af; color: #fff; border: none; margin-right: 6px; }
+  .btn-restore-no  { background: #fff; color: #1e40af; border: 1px solid #93c5fd; }
+
+  /* Planilha acumulativa */
+  .sheet-panel { background: #f0fdf4; border: 1px solid var(--pleno-bd); border-radius: 12px; padding: 1rem 1.25rem; margin-top: 1rem; }
+  .sheet-panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 0.85rem; font-weight: 700; color: var(--pleno-t); }
+  .sheet-count { font-size: 0.72rem; font-weight: 600; background: var(--pleno-bd); color: var(--pleno-t); border-radius: 99px; padding: 2px 10px; }
+  .sheet-desc { font-size: 0.75rem; color: var(--pleno-t); margin-bottom: 10px; line-height: 1.5; opacity: .85; }
+  .btn-sheet-dl { padding: 8px 16px; background: #166534; color: #fff; border: none; border-radius: 8px; font-size: 0.82rem; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .btn-sheet-dl:hover { background: #14532d; }
+  .btn-sheet-cl { padding: 8px 12px; background: #fff; color: var(--muted); border: 1px solid var(--border); border-radius: 8px; font-size: 0.78rem; cursor: pointer; font-family: inherit; }
+  .btn-sheet-cl:hover { background: var(--lgray); }
+
+  @media (max-width:540px) {
+    .aluno-picker { flex-direction: column; }
+    .integrante-adj { flex-wrap: wrap; }
+    .integrante-row { gap: 6px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header>
+  <h1>AV2 Prática — Avaliação da Campanha Publicitária</h1>
+  <p>Criação Publicitária · UNI7 2026.1 · Prof. Edmilson Miranda Jr · 02/06/2026 · Total: 5,0 pts por aluno</p>
+</header>
+
+<div class="prog-wrap"><div class="prog-fill" id="prog"></div></div>
+
+<!-- RESTORE BAR -->
+<div class="restore-bar" id="restore-bar">
+  <p>Foi encontrada uma avaliação em andamento. Deseja restaurar?</p>
+  <button class="btn-restore-yes" onclick="restoreAutosave()">Sim, restaurar</button>
+  <button class="btn-restore-no"  onclick="discardAutosave()">Não, começar do zero</button>
+</div>
+
+<!-- IDENTIFICAÇÃO -->
+<div class="card">
+  <div class="q-title">Identificação</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:.875rem">
+    <div>
+      <label class="field-lbl">Turma</label>
+      <select id="turma" onchange="onTurma()">
+        <option value="">Selecione...</option>
+        <option>NOITE — Terças 18h30</option>
+        <option>MANHÃ — Segunda 08h20</option>
+      </select>
+    </div>
+    <div>
+      <label class="field-lbl">Nome do avaliador(a)</label>
+      <input type="text" id="avaliador" placeholder="Seu nome" oninput="onChange()">
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;margin-top:10px">
+    <div>
+      <label class="field-lbl">Nome do grupo / campanha</label>
+      <input type="text" id="grupo" placeholder="Ex.: Grupo 3 — Viva! Refrigerantes" oninput="onChange()">
+    </div>
+    <div>
+      <label class="field-lbl">Data</label>
+      <input type="text" id="data" value="02/06/2026" oninput="autosave()">
+    </div>
+  </div>
+</div>
+
+<!-- INTEGRANTES -->
+<div class="card">
+  <div class="q-title">Integrantes do grupo</div>
+  <div class="q-hint">Selecione entre 1 e 6 alunos. O ajuste individual (±1,0 pt) é configurado por aluno após a seleção.</div>
+  <div class="aluno-picker">
+    <select id="aluno-select" disabled>
+      <option value="">Selecione a turma primeiro...</option>
+    </select>
+    <button class="btn-add" id="btn-add" onclick="addAluno()" disabled>+ Adicionar</button>
+  </div>
+  <div class="integrantes-list" id="integrantes-list">
+    <div class="empty-hint" id="empty-hint">Nenhum aluno selecionado ainda.</div>
+  </div>
+  <div class="group-status" id="group-status"></div>
+</div>
+
+<div id="criterios-wrap"></div>
+
+<!-- PLACAR BASE -->
+<div class="score-bar">
+  <div class="score-lbl"><strong>Nota base da campanha</strong><br><span style="font-size:.7rem">soma dos critérios (todos devem ser respondidos) — ajuste individual varia por aluno</span></div>
+  <div><div class="score-val" id="score-val">—</div><div class="score-max">de 5,0 pts</div></div>
+  <div class="badge" id="badge"></div>
+</div>
+
+<!-- TETO 2,5 -->
+<div class="teto-wrap">
+  <input type="checkbox" id="teto-check" onchange="onChange()">
+  <label for="teto-check">Aplicar teto de 2,5 pts — campanha desalinhada ao briefing (sem relação clara com o problema de comunicação desenvolvido no semestre)</label>
+</div>
+
+<!-- OBSERVAÇÕES -->
+<div class="card">
+  <div class="q-title">Observações gerais do grupo</div>
+  <div class="q-hint">Anotações sobre a apresentação do grupo como um todo.</div>
+  <textarea id="obs" placeholder="Pontos fortes, fragilidades, justificativas..." oninput="autosave()"></textarea>
+</div>
+
+<div class="alert a-amber">ℹ <span><strong>Teto 2,5 pts:</strong> use o checkbox acima para aplicar a regra operacionalmente.</span></div>
+
+<button class="btn-gerar" id="btn-gerar" onclick="gerar()" disabled>Gerar resultado desta avaliação</button>
+
+<div class="result-box" id="result-box"></div>
+<div id="result-btns" style="display:none">
+  <button class="btn-copy"   onclick="copiar()">⧉ Copiar texto</button>
+  <button class="btn-novo"   onclick="novoGrupo()">+ Avaliar próximo grupo</button>
+  <button class="btn-limpar" onclick="limparDadosSalvos()">✕ Limpar dados salvos</button>
+</div>
+
+<!-- PLANILHA ACUMULATIVA -->
+<div class="sheet-panel" id="sheet-panel">
+  <div class="sheet-panel-head">
+    <span>📊 Planilha acumulativa</span>
+    <span class="sheet-count" id="sheet-count"></span>
+  </div>
+  <p class="sheet-desc">A cada grupo gerado, os dados são acumulados aqui. Baixe a planilha quando terminar todas as avaliações.</p>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <button class="btn-sheet-dl" id="btn-download-sheet" onclick="downloadSheet()" style="display:none">⬇ Baixar planilha (.xlsx)</button>
+    <button class="btn-sheet-cl" id="btn-clear-sheet" onclick="askClearSheet()" style="display:none">🗑 Limpar planilha</button>
+    <span id="clear-confirm" style="display:none;font-size:0.78rem;color:var(--insuf-t);display:none;align-items:center;gap:6px">
+      Tem certeza?
+      <button class="btn-sheet-cl" style="color:var(--insuf-t);border-color:var(--insuf-bd)" onclick="clearSheet()">Sim, apagar</button>
+      <button class="btn-sheet-cl" onclick="cancelClearSheet()">Cancelar</button>
+    </span>
+  </div>
+</div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+/* ─── DADOS ─────────────────────────────────────────────────────────── */
+const ALUNOS = {
+  "NOITE — Terças 18h30": [
+    "Alicia Barros Silva","Ana Beatriz Brito de Menezes","Ana Carla Rosas Rodrigues",
+    "Ana Ingrid Machado de Oliveira","André Silva Cavalcante","Antônio Guilherme de Queiroz Granja",
+    "Armando Reinaldo de Sousa","Bianca de Sousa Santos","Cêmelly Freitas da Silva",
+    "Crislayne de Souza Ferreira","Emilly Lais de Lima Pinheiro Ferreira","Felipe Silva de Souza",
+    "Júlia Cavalcante","Kauã Alves da Silva","Kellyane Lopes de Souza",
+    "Letícia Dávina Rodrigues dos Santos","Letícia Miranda Alencar Fernandes",
+    "Luana Vitoria Silva Serrao","Maria Eduarda Teixeira de Lima","Sumayra Campos de Lima",
+    "Thaís Emily Bernardino da Costa","Thalita Moraes Jansen","Weslyana Vitoria Silva Costa",
+    "Yasmin Maria Santos Vidal"
+  ],
+  "MANHÃ — Segunda 08h20": [
+    "Ana Caroline Augusto Marques","Ana Caroline Vieira Costa","Ana Luiza Carlota Morales",
+    "Ariadna Beatriz Xavier Lima","Evelyn Victória do Nascimento Feitosa",
+    "Gabriel Ciarlini Pinheiro Pinto","Gabrielle da Rocha Loureiro","Gisele Lima da Costa Sales",
+    "Gyovanna do Nascimento Camara","Isabella Fernandes Pinheiro","José Domingos de Sousa Filho",
+    "Larissa de Sousa Gomes","Lucilene Pereira da Cunha","Maria Eduarda Pereira de Oliveira",
+    "Nathalia Marques da Silva","Nycole Lima de Oliveira Ferreira",
+    "Paulo César Bezerra Rodrigues","Raphaela Martins Lima"
+  ]
+};
+
+const CRITERIOS = [
+  { bloco:"BLOCO 1 · ESTRATÉGIA", total:1.5, items:[
+    { id:"c1", label:"1. Diagnóstico — Problema de comunicação", max:0.5,
+      hint:"O problema é comunicacional (percepção, imagem, associação) — não de vendas ou negócio. Específico e justificado.",
+      ancora:"Âncora: qualquer formulação do tipo 'vender mais' ou 'crescer' = insuficiente.",
+      opts:[{t:'Genérico ("vender mais") ou inexistente',s:0,cls:"t-i",sel:"sel-0"},{t:"Identificado, mas confunde problema de marketing com problema de comunicação",s:0.25,cls:"t-p",sel:"sel-h"},{t:"Claro, específico e genuinamente comunicacional",s:0.5,cls:"t-f",sel:"sel-f"}]},
+    { id:"c2", label:"2. Público-alvo", max:0.5,
+      hint:"Va além da demografia. Descreve comportamento, hábitos, repertório cultural, desejos e tensões.",
+      ancora:null,
+      opts:[{t:'Só faixa etária/gênero ("jovens de 18–35")',s:0,cls:"t-i",sel:"sel-0"},{t:"Acrescenta algum dado comportamental, mas raso",s:0.25,cls:"t-p",sel:"sel-h"},{t:"Persona humanizada: rotina, desejos, repertório cultural",s:0.5,cls:"t-f",sel:"sel-f"}]},
+    { id:"c3", label:"3. Posicionamento e objetivo", max:0.5,
+      hint:"Território simbólico definido. Coerência entre posicionamento, público e objetivo da campanha.",
+      ancora:null,
+      opts:[{t:"Ausente ou é apenas um slogan",s:0,cls:"t-i",sel:"sel-0"},{t:"Definido, mas desconectado do público ou da estratégia",s:0.25,cls:"t-p",sel:"sel-h"},{t:"Território claro; orienta linguagem, estética e tom",s:0.5,cls:"t-f",sel:"sel-f"}]},
+  ]},
+  { bloco:"BLOCO 2 · CONCEITO E EXECUÇÃO", total:2.0, items:[
+    { id:"c4", label:"4. Conceito criativo", max:0.5,
+      hint:"Ideia central que gera TODAS as peças. Se funciona só em uma peça, é execução — não conceito.",
+      ancora:"Âncora: esse conceito funciona em 1 peça só, ou gera todas? Se só 1 → parcial ou insuficiente.",
+      opts:[{t:"Inexistente ou confundido com slogan/headline",s:0,cls:"t-i",sel:"sel-0"},{t:"Presente, mas frágil — não orienta todas as peças com clareza",s:0.25,cls:"t-p",sel:"sel-h"},{t:"Forte e expandível; une conceito e execução de forma reconhecível",s:0.5,cls:"t-f",sel:"sel-f"}]},
+    { id:"c5", label:"5. Execução das peças", max:0.75,
+      hint:"Mínimo 3 peças integradas. Relação clara entre conceito e execução visual/textual. Qualidade técnica adequada.",
+      ancora:null,
+      opts:[{t:"Menos de 3 peças ou peças sem conexão com o conceito",s:0,cls:"t-i",sel:"sel-0"},{t:"3 peças presentes, mas execução irregular ou desconectada",s:0.375,cls:"t-p",sel:"sel-h"},{t:"3+ peças integradas, execução coerente e qualidade técnica satisfatória",s:0.75,cls:"t-f",sel:"sel-f"}]},
+    { id:"c6", label:"6. Integração da campanha", max:0.75,
+      hint:"As peças funcionam como sistema coeso. Observador externo reconhece que pertencem à mesma campanha.",
+      ancora:null,
+      opts:[{t:"Peças independentes, sem unidade visual ou narrativa",s:0,cls:"t-i",sel:"sel-0"},{t:"Alguma unidade, mas inconsistências visíveis entre peças",s:0.375,cls:"t-p",sel:"sel-h"},{t:"Campanha reconhecível como sistema coeso e integrado",s:0.75,cls:"t-f",sel:"sel-f"}]},
+  ]},
+  { bloco:"BLOCO 3 · APRESENTAÇÃO", total:1.25, items:[
+    { id:"c7", label:"7. Narrativa de apresentação", max:0.5,
+      hint:"Segue o fluxo: diagnóstico → estratégia → conceito → peças. Progressão lógica e clara.",
+      ancora:null,
+      opts:[{t:"Apresentação desorganizada ou sem progressão lógica",s:0,cls:"t-i",sel:"sel-0"},{t:"Segue alguma ordem, mas partes importantes ficam confusas",s:0.25,cls:"t-p",sel:"sel-h"},{t:"Narrativa fluida e organizada; conduz o avaliador com clareza",s:0.5,cls:"t-f",sel:"sel-f"}]},
+    { id:"c8", label:"8. Justificativa criativa", max:0.5,
+      hint:"O grupo explica POR QUE cada decisão foi tomada. Argumentação — não descrição.",
+      ancora:null,
+      opts:[{t:"Só descreve as peças, não justifica escolhas",s:0,cls:"t-i",sel:"sel-0"},{t:"Justifica algumas escolhas; outras ficam sem explicação",s:0.25,cls:"t-p",sel:"sel-h"},{t:"Justifica com segurança todas as decisões criativas relevantes",s:0.5,cls:"t-f",sel:"sel-f"}]},
+    { id:"c9", label:"9. Adequação ao público", max:0.25,
+      hint:"Linguagem visual e textual conversa com o público definido. Coerência entre persona e peças.",
+      ancora:null,
+      opts:[{t:"Linguagem inadequada ou indiferente ao público definido",s:0,cls:"t-i",sel:"sel-0"},{t:"Adequação parcial; algumas peças destoam",s:0.125,cls:"t-p",sel:"sel-h"},{t:"Total coerência entre público-alvo e linguagem da campanha",s:0.25,cls:"t-f",sel:"sel-f"}]},
+  ]},
+  { bloco:"BLOCO 4 · ORGANIZAÇÃO E ENTREGA", total:0.25, items:[
+    { id:"c10", label:"10. Organização e entrega", max:0.25,
+      hint:"Padronização visual, legibilidade, revisão textual e entrega completa dos formatos solicitados (PDF + arquivos fonte).",
+      ancora:null,
+      opts:[{t:"Material desorganizado ou entrega incompleta/ausente",s:0,cls:"t-i",sel:"sel-0"},{t:"Material entregue com falhas perceptíveis de organização, revisão ou formatos incompletos",s:0.125,cls:"t-p",sel:"sel-h"},{t:"Material padronizado, revisado e entrega completa de todos os formatos",s:0.25,cls:"t-f",sel:"sel-f"}]},
+  ]},
+];
+
+const IDS     = ["c1","c2","c3","c4","c5","c6","c7","c8","c9","c10"];
+const NOMES_C = ["C1. Diagnóstico","C2. Público-alvo","C3. Posicionamento","C4. Conceito criativo","C5. Execução das peças","C6. Integração","C7. Narrativa","C8. Justificativa","C9. Adequação","C10. Org. e Entrega"];
+const MAX_C   = [0.5,0.5,0.5,0.5,0.75,0.75,0.5,0.5,0.25,0.25];
+const ADJ_VALS = [0, 0.5, 1.0];
+const ADJ_LBLS = ["0", "+0,5", "+1,0"];
+const LS_KEY   = "av2_autosave";
+
+const scores = {}; IDS.forEach(id => scores[id] = null);
+let integrantes = []; // {nome, adj, ausente}
+let _prevTurma  = "";
+
+/* ─── VERIFICAÇÃO CENTRALIZADA ──────────────────────────────────────── */
+function isComplete() {
+  const turma   = document.getElementById("turma").value.trim();
+  const aval    = document.getElementById("avaliador").value.trim();
+  const grupo   = document.getElementById("grupo").value.trim();
+  const temAluno = integrantes.length > 0;
+  const todosC  = IDS.every(id => scores[id] !== null);
+  return !!(turma && aval && grupo && temAluno && todosC);
+}
+
+function updateBtnGerar() {
+  document.getElementById("btn-gerar").disabled = !isComplete();
+}
+
+/* onChange = ponto central chamado por todos os inputs */
+function onChange() {
+  updateBtnGerar();
+  updateProg();
+  calcScore();
+  autosave();
+}
+
+/* ─── BARRA DE PROGRESSO ─────────────────────────────────────────────── */
+function updateProg() {
+  // 3 campos de ID + 1 integrantes + 11 critérios = 15 itens
+  const idOk    = ["turma","avaliador","grupo"].filter(id => document.getElementById(id).value.trim()).length;
+  const alunoOk = integrantes.length > 0 ? 1 : 0;
+  const critOk  = IDS.filter(id => scores[id] !== null).length;
+  const pct     = Math.round(((idOk + alunoOk + critOk) / 15) * 100);
+  document.getElementById("prog").style.width = pct + "%";
+}
+
+/* ─── TURMA ──────────────────────────────────────────────────────────── */
+function onTurma() {
+  const t = document.getElementById("turma").value;
+  _prevTurma = t;
+  refreshSelect();
+  onChange();
+}
+
+function refreshSelect() {
+  const t   = document.getElementById("turma").value;
+  const sel = document.getElementById("aluno-select");
+  sel.innerHTML = t
+    ? '<option value="">Selecione um aluno...</option>'
+    : '<option value="">Selecione a turma primeiro...</option>';
+  if (t && ALUNOS[t]) {
+    // exclui alunos já no grupo atual E já avaliados em qualquer grupo anterior (qualquer turma)
+    const noGrupoAtual = new Set(integrantes.map(i => i.nome));
+    const jaAvaliados  = new Set(getSheetRows().map(r => r["Aluno"]));
+    ALUNOS[t].forEach(n => {
+      if (!noGrupoAtual.has(n) && !jaAvaliados.has(n)) {
+        const o = document.createElement("option"); o.value = n; o.textContent = n; sel.appendChild(o);
+      }
+    });
+  }
+  sel.disabled = !t;
+  updateBtnAdd();
+}
+
+function updateBtnAdd() {
+  const t    = document.getElementById("turma").value;
+  const nome = document.getElementById("aluno-select").value;
+  document.getElementById("btn-add").disabled = !t || !nome || integrantes.length >= 6;
+}
+
+/* ─── INTEGRANTES ────────────────────────────────────────────────────── */
+function addAluno() {
+  const sel  = document.getElementById("aluno-select");
+  const nome = sel.value;
+  if (integrantes.length >= 6) return;
+  if (!nome) {
+    sel.style.borderColor = "var(--red)";
+    sel.style.boxShadow   = "0 0 0 2px rgba(139,0,0,0.25)";
+    sel.focus();
+    setTimeout(() => { sel.style.borderColor = ""; sel.style.boxShadow = ""; }, 1800);
+    return;
+  }
+  integrantes.push({nome, adj: 0, ausente: false});
+  renderIntegrantes();
+  refreshSelect();
+  onChange();
+}
+
+function removeAluno(idx) {
+  integrantes.splice(idx, 1);
+  renderIntegrantes();
+  refreshSelect();
+  onChange();
+}
+
+function setAdj(idx, val) {
+  integrantes[idx].adj = val;
+  renderIntegrantes();
+  onChange();
+}
+
+function setAusente(idx, val) {
+  integrantes[idx].ausente = val;
+  renderIntegrantes();
+  onChange();
+}
+
+function renderIntegrantes() {
+  const list  = document.getElementById("integrantes-list");
+  const empty = document.getElementById("empty-hint");
+  const gs    = document.getElementById("group-status");
+
+  // limpa só as linhas de aluno, nunca o empty-hint
+  Array.from(list.children).forEach(el => {
+    if (el !== empty) el.remove();
+  });
+
+  if (!integrantes.length) {
+    empty.style.display = "";
+    gs.style.display = "none"; return;
+  }
+  empty.style.display = "none";
+
+  const base     = calcBase(); // null se critérios incompletos
+  const tetoAtivo = document.getElementById("teto-check").checked;
+
+  integrantes.forEach((al, idx) => {
+    let notaStr;
+    if (base === null) {
+      notaStr = "—";
+    } else {
+      let n = Math.min(Math.max(+(base + al.adj).toFixed(4), 0), 5);
+      if (tetoAtivo) n = Math.min(n, 2.5);
+      notaStr = n.toFixed(2).replace(".",",") + " pt";
+    }
+
+    const row = document.createElement("div");
+    row.className = "integrante-row" + (al.ausente ? " ausente-row" : "");
+
+    const adjBtns = ADJ_VALS.map((v,i) => {
+      const cls = v === al.adj ? (v > 0 ? "ia-btn ap" : "ia-btn az") : "ia-btn";
+      return `<button class="${cls}" onclick="setAdj(${idx},${v})" title="Ajuste ${ADJ_LBLS[i]}">${ADJ_LBLS[i]}</button>`;
+    }).join("");
+
+    const notaCls = al.ausente ? "integrante-nota ausente-tag" : "integrante-nota";
+    const ausCk   = al.ausente ? "checked" : "";
+
+    row.innerHTML = `
+      <span class="integrante-num">${idx+1}</span>
+      <span class="integrante-nome">${al.nome}</span>
+      <span style="font-size:.65rem;color:var(--muted);flex-shrink:0">ajuste:</span>
+      <div class="integrante-adj">${adjBtns}</div>
+      <span class="${notaCls}">${notaStr}</span>
+      <div class="ausente-wrap">
+        <input type="checkbox" id="aus-${idx}" ${ausCk} onchange="setAusente(${idx},this.checked)">
+        <label for="aus-${idx}">Ausente</label>
+      </div>
+      <button class="btn-rm" onclick="removeAluno(${idx})" title="Remover">×</button>
+    `;
+    list.appendChild(row);
+  });
+
+  // #9 — badge de grupo sempre visível
+  const n = integrantes.length;
+  gs.style.display = "";
+  if (n === 6) {
+    gs.className = "group-status gs-ok";
+    gs.textContent = `Grupo completo — 6/6 integrantes`;
+  } else {
+    gs.className = "group-status gs-warn";
+    gs.textContent = `${n} integrante${n>1?"s":""} selecionado${n>1?"s":""} — máx 6`;
+  }
+}
+
+/* ─── CRITÉRIOS ──────────────────────────────────────────────────────── */
+function buildForm() {
+  const wrap = document.getElementById("criterios-wrap");
+  CRITERIOS.forEach(bloco => {
+    const sh = document.createElement("div");
+    sh.className = "sec-head";
+    sh.innerHTML = `<span>${bloco.bloco}</span><span style="opacity:.8;font-size:.7rem">${bloco.total.toFixed(2).replace(".",",")} pts</span>`;
+    wrap.appendChild(sh);
+    bloco.items.forEach(item => {
+      const card = document.createElement("div");
+      card.className = "card";
+      let h = `<div class="q-title">${item.label} <span style="font-size:.7rem;font-weight:400;color:var(--muted)">· máx ${String(item.max).replace(".",",")} pt</span></div>`;
+      h += `<div class="q-hint">${item.hint}</div>`;
+      if (item.ancora) h += `<span class="anchor">⚡ ${item.ancora}</span>`;
+      h += `<div class="radio-group" id="rg-${item.id}">`;
+      item.opts.forEach((opt,oi) => {
+        const ps = opt.s===0?"0 pt":opt.s.toString().replace(".",",")+" pt";
+        h += `<label class="radio-opt" id="ro-${item.id}-${oi}">
+          <input type="radio" name="${item.id}" value="${opt.s}" onchange="pick('${item.id}',${oi},${opt.s},'${opt.sel}')">
+          <span class="opt-txt ${opt.cls}">${opt.t}</span>
+          <span class="opt-pts">${ps}</span>
+        </label>`;
+      });
+      h += `</div>`; card.innerHTML = h; wrap.appendChild(card);
+    });
+  });
+}
+
+function pick(id, oi, score, selCls) {
+  scores[id] = score;
+  document.querySelectorAll(`#rg-${id} .radio-opt`).forEach((el,i) => {
+    el.classList.remove("sel-0","sel-h","sel-f");
+    if (i===oi) el.classList.add(selCls);
+  });
+  onChange();
+  renderIntegrantes();
+}
+
+/* ─── CÁLCULOS ───────────────────────────────────────────────────────── */
+// #3 — só retorna valor se TODOS os critérios respondidos
+function calcBase() {
+  const allAnswered = IDS.every(id => scores[id] !== null);
+  if (!allAnswered) return null;
+  return IDS.reduce((a,id) => a + scores[id], 0);
+}
+
+function calcScore() {
+  const base      = calcBase();
+  const tetoAtivo = document.getElementById("teto-check").checked;
+  const sv        = document.getElementById("score-val");
+  const badge     = document.getElementById("badge");
+
+  if (base === null) {
+    sv.textContent = "—"; badge.style.display = "none"; return;
+  }
+  let exibido = tetoAtivo ? Math.min(base, 2.5) : base;
+  sv.textContent = exibido.toFixed(2).replace(".",",");
+  badge.style.display = "inline-block"; badge.className = "badge";
+  if (exibido < 2.5)      { badge.classList.add("b-low"); badge.textContent = "Insuficiente"; }
+  else if (exibido < 3.5) { badge.classList.add("b-mid"); badge.textContent = "Regular"; }
+  else if (exibido < 4.5) { badge.classList.add("b-mid"); badge.textContent = "Bom"; }
+  else                    { badge.classList.add("b-high"); badge.textContent = "Excelente"; }
+}
+
+/* ─── AUTOSAVE ───────────────────────────────────────────────────────── */
+function autosave() {
+  try {
+    const estado = {
+      turma:       document.getElementById("turma").value,
+      avaliador:   document.getElementById("avaliador").value,
+      grupo:       document.getElementById("grupo").value,
+      data:        document.getElementById("data").value,
+      obs:         document.getElementById("obs").value,
+      teto:        document.getElementById("teto-check").checked,
+      scores:      {...scores},
+      integrantes: JSON.parse(JSON.stringify(integrantes)),
+    };
+    localStorage.setItem(LS_KEY, JSON.stringify(estado));
+  } catch(e) {}
+}
+
+function checkAutosave() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return;
+    const e = JSON.parse(raw);
+    const temDados = e.avaliador || e.grupo || (e.integrantes && e.integrantes.length);
+    if (temDados) document.getElementById("restore-bar").style.display = "block";
+  } catch(e) {}
+}
+
+function restoreAutosave() {
+  try {
+    const e = JSON.parse(localStorage.getItem(LS_KEY));
+    document.getElementById("restore-bar").style.display = "none";
+    document.getElementById("turma").value     = e.turma || "";
+    document.getElementById("avaliador").value = e.avaliador || "";
+    document.getElementById("grupo").value     = e.grupo || "";
+    document.getElementById("data").value      = e.data || "02/06/2026";
+    document.getElementById("obs").value       = e.obs || "";
+    document.getElementById("teto-check").checked = !!e.teto;
+    _prevTurma = e.turma || "";
+
+    if (e.scores) IDS.forEach(id => { scores[id] = e.scores[id] !== undefined ? e.scores[id] : null; });
+    if (e.integrantes) integrantes = e.integrantes;
+
+    // restaurar UI dos critérios
+    IDS.forEach(id => {
+      if (scores[id] === null) return;
+      CRITERIOS.forEach(bloco => bloco.items.forEach(item => {
+        if (item.id !== id) return;
+        item.opts.forEach((opt,oi) => {
+          if (opt.s === scores[id]) {
+            document.querySelectorAll(`#rg-${id} .radio-opt`).forEach((el,i) => {
+              el.classList.remove("sel-0","sel-h","sel-f");
+              if (i===oi) el.classList.add(opt.sel);
+            });
+            const radio = document.querySelector(`#rg-${id} input[value="${opt.s}"]`);
+            if (radio) radio.checked = true;
+          }
+        });
+      }));
+    });
+
+    refreshSelect();
+    renderIntegrantes();
+    onChange();
+  } catch(err) {
+    discardAutosave();
+  }
+}
+
+function discardAutosave() {
+  document.getElementById("restore-bar").style.display = "none";
+  limparDadosSalvos();
+}
+
+function limparDadosSalvos() {
+  try { localStorage.removeItem(LS_KEY); } catch(e) {}
+}
+
+/* ─── GERAR RESULTADO ────────────────────────────────────────────────── */
+function fmtPt(v) { return v===null?"—":(+v).toFixed(3).replace(/\.?0+$/,"").replace(".",","); }
+
+function gerar() {
+  const turma     = document.getElementById("turma").value     || "(não informada)";
+  const aval      = document.getElementById("avaliador").value || "(não informado)";
+  const grupo     = document.getElementById("grupo").value     || "(não informado)";
+  const data      = document.getElementById("data").value      || "02/06/2026";
+  const obs       = document.getElementById("obs").value       || "—";
+  const tetoAtivo = document.getElementById("teto-check").checked;
+  const base      = calcBase();
+  const L         = "─".repeat(58);
+
+  let txt = `AVALIAÇÃO AV2 PRÁTICA — CRIAÇÃO PUBLICITÁRIA · UNI7 2026.1\n${L}\n`;
+  txt += `Turma     : ${turma}\nGrupo     : ${grupo}\nAvaliador : ${aval}\nData      : ${data}\n`;
+  if (tetoAtivo) txt += `TETO 2,5  : APLICADO — campanha desalinhada ao briefing\n`;
+  txt += `${L}\n`;
+
+  txt += `CRITÉRIOS (nota base do grupo)\n`;
+  IDS.forEach((id,i) => {
+    txt += `  ${NOMES_C[i].padEnd(28)} ${fmtPt(scores[id]).padStart(6)} / ${String(MAX_C[i]).replace(".",",")} pt\n`;
+  });
+  const baseStr = base !== null ? base.toFixed(2).replace(".",",") : "—";
+  const baseEfetiva = base !== null && tetoAtivo ? Math.min(base, 2.5) : base;
+  const baseEfStr = baseEfetiva !== null ? baseEfetiva.toFixed(2).replace(".",",") : "—";
+  txt += `${"─".repeat(40)}\n  Subtotal critérios             ${baseStr.padStart(6)} / 5,0 pt\n`;
+  if (tetoAtivo) txt += `  Após teto de 2,5               ${baseEfStr.padStart(6)} / 5,0 pt\n`;
+  txt += `${L}\n`;
+
+  txt += `NOTAS INDIVIDUAIS (col. I da planilha)\n`;
+  integrantes.forEach((al,i) => {
+    let notaFinal, adjStr;
+    let n = base !== null ? Math.min(Math.max(+(base + al.adj).toFixed(4), 0), 5) : null;
+    if (n !== null && tetoAtivo) n = Math.min(n, 2.5);
+    notaFinal = n !== null ? n.toFixed(2).replace(".",",") + " pt" : "—";
+    if (al.ausente) notaFinal += " (AUSENTE)";
+    adjStr    = al.adj >= 0 ? `+${String(al.adj).replace(".",",")}` : String(al.adj).replace(".",",");
+    adjStr    = adjStr.padStart(5) + "  →  ";
+    txt += `  ${String(i+1).padStart(2)}. ${al.nome.padEnd(38)} ${adjStr}${notaFinal}\n`;
+  });
+
+  const ausentes = integrantes.filter(a => a.ausente).map(a => a.nome);
+  if (ausentes.length) {
+    txt += `${L}\nAUSENTES NA APRESENTAÇÃO:\n`;
+    ausentes.forEach(n => { txt += `  • ${n}\n`; });
+  }
+  txt += `${L}\nObservações:\n${obs}\n`;
+
+  const box = document.getElementById("result-box");
+  box.style.display = "block"; box.textContent = txt;
+  document.getElementById("result-btns").style.display = "block";
+  box.scrollIntoView({behavior:"smooth", block:"nearest"});
+  // registra na planilha acumulativa
+  appendToSheet();
+  // limpa autosave após gerar com sucesso
+  limparDadosSalvos();
+}
+
+/* ─── COPIAR (com fallback) ──────────────────────────────────────────── */
+function copiar() {
+  const txt = document.getElementById("result-box").textContent;
+  const btn = document.querySelector(".btn-copy");
+  function feedback(ok) {
+    btn.textContent = ok ? "✓ Copiado!" : "✗ Erro ao copiar";
+    setTimeout(() => btn.textContent = "⧉ Copiar texto", 2200);
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(() => feedback(true)).catch(() => fallbackCopy(txt, feedback));
+  } else {
+    fallbackCopy(txt, feedback);
+  }
+}
+
+function fallbackCopy(txt, feedback) {
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = txt;
+    ta.style.cssText = "position:fixed;top:-9999px;left:-9999px;opacity:0";
+    document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    feedback(ok);
+  } catch(e) { feedback(false); }
+}
+
+/* ─── NOVO GRUPO ─────────────────────────────────────────────────────── */
+// #10 — mantém turma, avaliador, data; limpa todo o resto
+function novoGrupo() {
+  integrantes = [];
+  IDS.forEach(id => {
+    scores[id] = null;
+    document.querySelectorAll(`#rg-${id} .radio-opt`).forEach(el => el.classList.remove("sel-0","sel-h","sel-f"));
+    document.querySelectorAll(`#rg-${id} input[type=radio]`).forEach(el => el.checked = false);
+  });
+  document.getElementById("grupo").value = "";
+  document.getElementById("obs").value = "";
+  document.getElementById("teto-check").checked = false;
+  document.getElementById("score-val").textContent = "—";
+  document.getElementById("badge").style.display = "none";
+  document.getElementById("result-box").style.display = "none";
+  document.getElementById("result-btns").style.display = "none";
+  limparDadosSalvos(); // remove autosave do grupo anterior
+  renderIntegrantes();
+  refreshSelect();
+  onChange();
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+
+/* ─── PLANILHA ACUMULATIVA ───────────────────────────────────────────── */
+const LS_SHEET_KEY = "av2_planilha_rows";
+
+function getSheetRows() {
+  try {
+    const raw = localStorage.getItem(LS_SHEET_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+
+function saveSheetRows(rows) {
+  try { localStorage.setItem(LS_SHEET_KEY, JSON.stringify(rows)); } catch(e) {}
+}
+
+function appendToSheet() {
+  const turma     = document.getElementById("turma").value     || "(não informada)";
+  const aval      = document.getElementById("avaliador").value || "(não informado)";
+  const grupo     = document.getElementById("grupo").value     || "(não informado)";
+  const data      = document.getElementById("data").value      || "02/06/2026";
+  const tetoAtivo = document.getElementById("teto-check").checked;
+  const base      = calcBase();
+  const rows      = getSheetRows();
+
+  integrantes.forEach(al => {
+    let n = base !== null ? Math.min(Math.max(+(base + al.adj).toFixed(4), 0), 5) : 0;
+    if (tetoAtivo) n = Math.min(n, 2.5);
+    const notaFinal = +n.toFixed(2);
+
+    const row = {
+      "Turma":          turma,
+      "Data":           data,
+      "Avaliador(a)":   aval,
+      "Grupo/Campanha": grupo,
+      "Aluno":          al.nome,
+      "Ausente":        al.ausente ? "SIM" : "NÃO",
+      "Ajuste Ind.":    al.adj,
+      "Teto 2,5 Aplicado": tetoAtivo ? "SIM" : "NÃO",
+      "C1 Diagnóstico":    scores["c1"]  ?? "",
+      "C2 Público-alvo":   scores["c2"]  ?? "",
+      "C3 Posicionamento": scores["c3"]  ?? "",
+      "C4 Conceito":       scores["c4"]  ?? "",
+      "C5 Execução":       scores["c5"]  ?? "",
+      "C6 Integração":     scores["c6"]  ?? "",
+      "C7 Narrativa":      scores["c7"]  ?? "",
+      "C8 Justificativa":  scores["c8"]  ?? "",
+      "C9 Adequação":      scores["c9"]  ?? "",
+      "C10 Org. e Entrega":  scores["c10"] ?? "",
+      "Nota Base Grupo":   base !== null ? +base.toFixed(2) : "",
+      "Nota Final Aluno":  notaFinal,
+    };
+    rows.push(row);
+  });
+
+  saveSheetRows(rows);
+  updateSheetCounter();
+}
+
+function updateSheetCounter() {
+  const rows  = getSheetRows();
+  const panel = document.getElementById("sheet-panel");
+  const btn   = document.getElementById("btn-download-sheet");
+  const btnCl = document.getElementById("btn-clear-sheet");
+  const count = document.getElementById("sheet-count");
+  const conf  = document.getElementById("clear-confirm");
+  if (!btn || !count) return;
+  if (rows.length > 0) {
+    panel.style.display = "";
+    btn.style.display   = "inline-block";
+    btnCl.style.display = "inline-block";
+    const grupos = new Set(rows.map(r => r["Grupo/Campanha"] + "|" + r["Turma"]));
+    count.textContent = `${grupos.size} grupo${grupos.size > 1 ? "s" : ""} · ${rows.length} aluno${rows.length > 1 ? "s" : ""}`;
+  } else {
+    panel.style.display = "none";
+    btn.style.display   = "none";
+    btnCl.style.display = "none";
+    if (conf) conf.style.display = "none";
+    count.textContent   = "";
+  }
+}
+
+function downloadSheet() {
+  const rows = getSheetRows();
+  if (!rows.length) return;
+
+  const wb  = XLSX.utils.book_new();
+  const ws  = XLSX.utils.json_to_sheet(rows);
+
+  // larguras de coluna
+  const colWidths = [
+    {wch:22},{wch:12},{wch:20},{wch:30},{wch:36},
+    {wch:10},{wch:8},{wch:16},
+    {wch:10},{wch:10},{wch:12},{wch:10},{wch:10},
+    {wch:10},{wch:10},{wch:12},{wch:10},{wch:10},{wch:10},
+    {wch:14},{wch:14}
+  ];
+  ws["!cols"] = colWidths;
+
+  XLSX.utils.book_append_sheet(wb, ws, "AV2 Campanha");
+
+  // aba resumo por aluno
+  const resumo = rows.map(r => ({
+    "Turma":    r["Turma"],
+    "Aluno":    r["Aluno"],
+    "Grupo":    r["Grupo/Campanha"],
+    "Ausente":  r["Ausente"],
+    "Nota Final (Col. I)": r["Nota Final Aluno"],
+  }));
+  const ws2 = XLSX.utils.json_to_sheet(resumo);
+  ws2["!cols"] = [{wch:22},{wch:36},{wch:30},{wch:8},{wch:18}];
+  XLSX.utils.book_append_sheet(wb, ws2, "Notas para Planilha");
+
+  // aba só com ausentes
+  const ausRows = rows.filter(r => r["Ausente"] === "SIM").map(r => ({
+    "Turma":  r["Turma"],
+    "Grupo":  r["Grupo/Campanha"],
+    "Aluno":  r["Aluno"],
+  }));
+  if (ausRows.length) {
+    const ws3 = XLSX.utils.json_to_sheet(ausRows);
+    ws3["!cols"] = [{wch:22},{wch:30},{wch:36}];
+    XLSX.utils.book_append_sheet(wb, ws3, "Ausentes");
+  }
+
+  XLSX.writeFile(wb, `AV2_Campanha_UNI7_2026_1.xlsx`);
+}
+
+function askClearSheet() {
+  document.getElementById("btn-clear-sheet").style.display = "none";
+  document.getElementById("clear-confirm").style.display   = "flex";
+}
+
+function cancelClearSheet() {
+  document.getElementById("clear-confirm").style.display   = "none";
+  document.getElementById("btn-clear-sheet").style.display = "inline-block";
+}
+
+function clearSheet() {
+  try { localStorage.removeItem(LS_SHEET_KEY); } catch(e) {}
+  document.getElementById("clear-confirm").style.display = "none";
+  updateSheetCounter();
+  refreshSelect();
+}
+
+/* ─── INIT ───────────────────────────────────────────────────────────── */
+buildForm();
+onChange();
+checkAutosave();
+
+// autosave em cada interação relevante
+document.getElementById("obs").addEventListener("input", autosave);
+document.getElementById("data").addEventListener("input", autosave);
+
+// iOS fix: usar change + input + touchend para garantir que o select
+// dispare updateBtnAdd em todos os browsers mobile, incluindo Safari/iOS
+(function() {
+  const sel = document.getElementById("aluno-select");
+  ["change", "input", "touchend"].forEach(evt => {
+    sel.addEventListener(evt, function() {
+      // pequeno delay no touchend para o iOS ter tempo de atualizar o value
+      if (evt === "touchend") {
+        setTimeout(updateBtnAdd, 80);
+      } else {
+        updateBtnAdd();
+      }
+    });
+  });
+})();
+
+updateSheetCounter();
+</script>
+</body>
+</html>
