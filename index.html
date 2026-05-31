@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Avaliações · Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --surface: #171717;
+    --surface2: #1f1f1f;
+    --border: #2a2a2a;
+    --accent: #c8b88a;
+    --accent2: #8ab4c8;
+    --text: #e8e4dc;
+    --muted: #6b6760;
+    --tag-bg: #252320;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* grain overlay */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0; opacity: .5;
+  }
+
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 1.5rem 5rem; position: relative; z-index: 1; }
+
+  /* header */
+  header { padding: 3.5rem 0 2.5rem; border-bottom: 1px solid var(--border); margin-bottom: 3rem; }
+  .header-eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 1rem; display: flex; align-items: center; gap: 10px;
+  }
+  .header-eyebrow::before { content: ''; display: block; width: 28px; height: 1px; background: var(--accent); }
+  h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(2rem, 5vw, 3.25rem);
+    font-weight: 400; line-height: 1.1;
+    color: var(--text);
+    letter-spacing: -.01em;
+  }
+  h1 em { font-style: italic; color: var(--accent); }
+  .header-sub {
+    margin-top: 1rem; font-size: 0.875rem; color: var(--muted);
+    line-height: 1.6; max-width: 480px; font-weight: 300;
+  }
+
+  /* search */
+  .search-wrap { margin-bottom: 2.5rem; position: relative; }
+  .search-wrap input {
+    width: 100%; padding: 12px 16px 12px 42px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; font-size: 0.875rem; font-family: 'DM Sans', sans-serif;
+    color: var(--text); outline: none; transition: border-color .15s;
+  }
+  .search-wrap input::placeholder { color: var(--muted); }
+  .search-wrap input:focus { border-color: var(--accent); }
+  .search-icon {
+    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    color: var(--muted); font-size: 0.9rem; pointer-events: none;
+  }
+
+  /* section label */
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 1rem;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* grid */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 3rem; }
+
+  /* card */
+  .card {
+    background: var(--surface);
+    padding: 1.5rem;
+    display: flex; flex-direction: column; gap: 12px;
+    text-decoration: none; color: inherit;
+    transition: background .15s;
+    position: relative; overflow: hidden;
+  }
+  .card:hover { background: var(--surface2); }
+  .card::after {
+    content: '↗';
+    position: absolute; top: 1.25rem; right: 1.25rem;
+    font-size: 0.9rem; color: var(--muted);
+    transition: color .15s, transform .15s;
+  }
+  .card:hover::after { color: var(--accent); transform: translate(2px, -2px); }
+
+  .card-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+  .tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem; letter-spacing: .08em; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 4px;
+    background: var(--tag-bg); color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .tag.accent  { background: #1e1a0f; color: var(--accent);  border-color: #3a3010; }
+  .tag.accent2 { background: #0f171e; color: var(--accent2); border-color: #102030; }
+
+  .card-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.1rem; font-weight: 400; line-height: 1.3;
+    color: var(--text);
+  }
+  .card-desc { font-size: 0.78rem; color: var(--muted); line-height: 1.6; font-weight: 300; }
+  .card-meta {
+    margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border);
+    font-family: 'DM Mono', monospace; font-size: 0.6rem;
+    color: var(--muted); letter-spacing: .06em;
+    display: flex; justify-content: space-between;
+  }
+
+  /* empty state */
+  .empty { text-align: center; padding: 3rem 1rem; color: var(--muted); font-size: 0.85rem; display: none; }
+
+  /* add new card */
+  .card-new {
+    background: var(--bg);
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 8px; text-align: center;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+  .card-new-icon { font-size: 1.5rem; opacity: .3; }
+  .card-new-txt { font-size: 0.75rem; line-height: 1.6; }
+  .card-new code {
+    font-family: 'DM Mono', monospace; font-size: 0.65rem;
+    background: var(--surface); padding: 2px 6px; border-radius: 4px;
+    color: var(--accent); border: 1px solid var(--border);
+  }
+
+  /* footer */
+  footer {
+    border-top: 1px solid var(--border); padding-top: 2rem;
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 8px;
+  }
+  footer p { font-family: 'DM Mono', monospace; font-size: 0.6rem; color: var(--muted); letter-spacing: .08em; }
+
+  @media (max-width: 540px) {
+    .grid { grid-template-columns: 1fr; }
+    header { padding: 2.5rem 0 2rem; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="header-eyebrow">Portal de Avaliações</div>
+    <h1>Instrumentos de <em>avaliação</em><br>docente</h1>
+    <p class="header-sub">Widgets de avaliação formativa e somativa para uso em sala de aula. Cada instrumento gera registros individualizados e planilha exportável.</p>
+  </header>
+
+  <div class="search-wrap">
+    <span class="search-icon">⌕</span>
+    <input type="text" id="search" placeholder="Buscar por disciplina, turma ou tipo de avaliação..." oninput="filterCards()">
+  </div>
+
+  <div class="section-label">Avaliações disponíveis</div>
+
+  <div class="grid" id="grid">
+
+    <!-- CARD 1 — AV2 Campanha -->
+    <a class="card" href="av2-criacao-2026/index.html"
+       data-tags="criacao publicitaria campanha av2 pratica">
+      <div class="card-tags">
+        <span class="tag accent">AV2</span>
+        <span class="tag accent">Prática</span>
+        <span class="tag">Criação Publicitária</span>
+      </div>
+      <div class="card-title">Avaliação da Campanha Publicitária</div>
+      <div class="card-desc">Rubrica em 4 blocos: Estratégia, Conceito e Execução, Apresentação, Organização e Entrega. Suporte a grupos mistos e ajuste individual de nota.</div>
+      <div class="card-meta">
+        <span>10 critérios · 5,0 pts</span>
+        <span>2026.1</span>
+      </div>
+    </a>
+
+  </div>
+
+  <div class="empty" id="empty">Nenhuma avaliação encontrada para "<span id="empty-term"></span>".</div>
+
+  <div class="card-new">
+    <div class="card-new-icon">＋</div>
+    <div class="card-new-txt">Para adicionar um novo instrumento, crie uma subpasta no repositório<br>e adicione um novo <code>&lt;a class="card"&gt;</code> acima.</div>
+  </div>
+
+  <footer>
+    <p>Portal de Avaliações Docentes</p>
+    <p>Gerado localmente · sem servidor · dados no browser</p>
+  </footer>
+
+</div>
+
+<script>
+function filterCards() {
+  const q     = document.getElementById("search").value.toLowerCase().trim();
+  const cards = document.querySelectorAll(".card");
+  let visible = 0;
+  cards.forEach(c => {
+    const text = (c.dataset.tags + " " + c.textContent).toLowerCase();
+    const show = !q || text.includes(q);
+    c.style.display = show ? "" : "none";
+    if (show) visible++;
+  });
+  const empty = document.getElementById("empty");
+  document.getElementById("empty-term").textContent = q;
+  empty.style.display = (!q || visible > 0) ? "none" : "block";
+
+  // esconde/mostra o grid inteiro se vazio
+  document.getElementById("grid").style.display = visible === 0 ? "none" : "";
+}
+</script>
+</body>
+</html>
