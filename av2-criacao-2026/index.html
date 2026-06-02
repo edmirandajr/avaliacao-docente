@@ -763,7 +763,8 @@ function novoGrupo() {
 }
 
 /* ─── PLANILHA ACUMULATIVA ───────────────────────────────────────────── */
-const LS_SHEET_KEY = "av2_planilha_rows";
+const LS_SHEET_KEY   = "av2_planilha_rows";
+const LS_RECORDS_KEY = "av2_registros_texto";
 
 function getSheetRows() {
   try {
@@ -776,11 +777,23 @@ function saveSheetRows(rows) {
   try { localStorage.setItem(LS_SHEET_KEY, JSON.stringify(rows)); } catch(e) {}
 }
 
+function getRecords() {
+  try {
+    const raw = localStorage.getItem(LS_RECORDS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+
+function saveRecords(recs) {
+  try { localStorage.setItem(LS_RECORDS_KEY, JSON.stringify(recs)); } catch(e) {}
+}
+
 function appendToSheet() {
   const turma     = document.getElementById("turma").value     || "(não informada)";
   const aval      = document.getElementById("avaliador").value || "(não informado)";
   const grupo     = document.getElementById("grupo").value     || "(não informado)";
   const data      = document.getElementById("data").value      || "02/06/2026";
+  const obs       = document.getElementById("obs").value.trim() || "";
   const tetoAtivo = document.getElementById("teto-check").checked;
   const base      = calcBase();
   const rows      = getSheetRows();
@@ -811,11 +824,23 @@ function appendToSheet() {
       "C10 Org. e Entrega":  scores["c10"] ?? "",
       "Nota Base Grupo":   base !== null ? +base.toFixed(2) : "",
       "Nota Final Aluno":  notaFinal,
+      "Observações":       obs,
     };
     rows.push(row);
   });
 
   saveSheetRows(rows);
+
+  // salva registro de texto completo por grupo
+  const recs = getRecords();
+  const textoGerado = document.getElementById("result-box").textContent || "";
+  recs.push({
+    turma, data, aval, grupo,
+    obs,
+    texto: textoGerado,
+  });
+  saveRecords(recs);
+
   updateSheetCounter();
 }
 
@@ -852,10 +877,10 @@ function downloadSheet() {
   // larguras de coluna
   const colWidths = [
     {wch:22},{wch:12},{wch:20},{wch:30},{wch:36},
-    {wch:10},{wch:8},{wch:16},
+    {wch:8},{wch:10},{wch:16},
     {wch:10},{wch:10},{wch:12},{wch:10},{wch:10},
     {wch:10},{wch:10},{wch:12},{wch:10},{wch:10},{wch:10},
-    {wch:14},{wch:14}
+    {wch:14},{wch:14},{wch:50}
   ];
   ws["!cols"] = colWidths;
 
@@ -868,9 +893,10 @@ function downloadSheet() {
     "Grupo":    r["Grupo/Campanha"],
     "Ausente":  r["Ausente"],
     "Nota Final (Col. I)": r["Nota Final Aluno"],
+    "Observações": r["Observações"] || "",
   }));
   const ws2 = XLSX.utils.json_to_sheet(resumo);
-  ws2["!cols"] = [{wch:22},{wch:36},{wch:30},{wch:8},{wch:18}];
+  ws2["!cols"] = [{wch:22},{wch:36},{wch:30},{wch:8},{wch:18},{wch:50}];
   XLSX.utils.book_append_sheet(wb, ws2, "Notas para Planilha");
 
   // aba só com ausentes
@@ -883,6 +909,22 @@ function downloadSheet() {
     const ws3 = XLSX.utils.json_to_sheet(ausRows);
     ws3["!cols"] = [{wch:22},{wch:30},{wch:36}];
     XLSX.utils.book_append_sheet(wb, ws3, "Ausentes");
+  }
+
+  // aba registros de texto completo por grupo
+  const recs = getRecords();
+  if (recs.length) {
+    const recsSheet = recs.map(r => ({
+      "Turma":          r.turma,
+      "Data":           r.data,
+      "Avaliador(a)":   r.aval,
+      "Grupo/Campanha": r.grupo,
+      "Observações":    r.obs,
+      "Registro Completo": r.texto,
+    }));
+    const ws4 = XLSX.utils.json_to_sheet(recsSheet);
+    ws4["!cols"] = [{wch:22},{wch:12},{wch:20},{wch:30},{wch:50},{wch:80}];
+    XLSX.utils.book_append_sheet(wb, ws4, "Registros");
   }
 
   XLSX.writeFile(wb, `AV2_Campanha_UNI7_2026_1.xlsx`);
@@ -900,6 +942,7 @@ function cancelClearSheet() {
 
 function clearSheet() {
   try { localStorage.removeItem(LS_SHEET_KEY); } catch(e) {}
+  try { localStorage.removeItem(LS_RECORDS_KEY); } catch(e) {}
   document.getElementById("clear-confirm").style.display = "none";
   updateSheetCounter();
   refreshSelect();
